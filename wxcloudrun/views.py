@@ -4,14 +4,41 @@ from run import app
 from wxcloudrun.dao import delete_counterbyid, query_counterbyid, insert_counter, update_counterbyid
 from wxcloudrun.model import Counters
 from wxcloudrun.response import make_succ_empty_response, make_succ_response, make_err_response
+import requests
 
+# 设置目标URL
+TARGET_URL = 'http://106.54.29.220/'
 
-@app.route('/')
-def index():
-    """
-    :return: 返回index页面
-    """
-    return render_template('index.html')
+# 定义路由，将所有请求都转发到目标URL
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+def index(path):
+    # 构建目标URL
+    target_url = TARGET_URL + path
+
+    # 从原始请求中获取数据
+    data = request.get_data()
+    headers = dict(request.headers)
+
+    # 发送请求到目标URL
+    response = requests.request(
+        method=request.method,
+        url=target_url,
+        headers=headers,
+        data=data,
+        stream=True,
+        allow_redirects=False
+    )
+
+    # 构建响应
+    resp = app.response_class(
+        response=response.content,
+        status=response.status_code,
+        headers=response.headers.items()
+    )
+
+    return resp
+
 
 
 @app.route('/api/count', methods=['POST'])
